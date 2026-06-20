@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seller Panel — Purbalingga Mart</title>
+  <link rel="stylesheet" href="seller.css" />
+  <link rel="stylesheet" href="assets/css/products.css" />
+  <style>
+    /* ── Low stock alert banner (dashboard) ──────────────────── */
+    .lsa-banner   { background:#fff; border:1.5px solid #fde8b4; border-left:4px solid #e8a020; border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+    .lsa-head     { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; gap:10px; }
+    .lsa-head-left{ display:flex; align-items:center; gap:12px; }
+    .lsa-ico      { width:38px; height:38px; border-radius:10px; background:#fff8e8; display:grid; place-items:center; font-size:18px; flex-shrink:0; }
+    .lsa-title    { font-size:14px; font-weight:800; color:#1e293b; }
+    .lsa-sub      { font-size:12px; color:#7a4f00; margin-top:1px; }
+    .lsa-close    { background:none; border:none; color:#94a3b8; font-size:14px; cursor:pointer; padding:4px 8px; border-radius:6px; }
+    .lsa-close:hover { background:#f1f5f9; color:#1e293b; }
+    .lsa-list     { display:flex; flex-direction:column; border-top:1px solid #fff8e8; }
+    .lsa-item     { display:flex; align-items:center; gap:10px; padding:9px 16px; cursor:pointer; border-bottom:1px solid #f8fafc; transition:background .15s; }
+    .lsa-item:last-child { border-bottom:none; }
+    .lsa-item:hover { background:#fffaf0; }
+    .lsa-item img { width:34px; height:34px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid #f1f5f9; }
+    .lsa-item-info  { flex:1; min-width:0; }
+    .lsa-item-name  { font-size:12.5px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lsa-item-stock { font-size:11px; color:#94a3b8; margin-top:1px; }
+    .lsa-badge      { font-size:10px; font-weight:800; padding:3px 9px; border-radius:6px; text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; flex-shrink:0; }
+    .lsa-badge-low  { background:#fff8e8; color:#7a4f00; }
+    .lsa-badge-out  { background:#fee2e2; color:#b91c1c; }
+    .lsa-item-out .lsa-item-stock { color:#ef4444; font-weight:600; }
+    .lsa-more     { text-align:center; padding:9px 16px; font-size:12px; color:#64748b; font-weight:600; cursor:pointer; }
+    .lsa-more:hover { background:#fffaf0; }
+    @media(max-width:560px) { .lsa-item img { display:none; } }
+
+    /* ── Revenue trend chart (Statistik Toko) ────────────────── */
+    .rc-toggle    { display:flex; gap:4px; background:#f1f5f9; border-radius:9px; padding:3px; }
+    .rc-btn       { border:none; background:transparent; padding:6px 14px; border-radius:7px; font-size:12.5px; font-weight:700; color:#64748b; cursor:pointer; font-family:'Poppins',sans-serif; transition:all .15s; }
+    .rc-btn.active{ background:#fff; color:#7a4f00; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .rc-range-total { font-size:18px; font-weight:900; color:#e8a020; }
+    .rc-range-label  { font-size:11.5px; color:#94a3b8; font-weight:600; }
+  </style>
+  <style>
+    /* ── Membership tier badges ── */
+    .pc-tier-badge { display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.2px;flex-shrink:0 }
+    .pc-tier-gold   { background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border:1px solid #f59e0b }
+    .pc-tier-silver { background:linear-gradient(135deg,#f1f5f9,#e2e8f0);color:#475569;border:1px solid #94a3b8 }
+
+    /* ── Membership dashboard card ── */
+    #dash-membership-card.tier-gold   { background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #f59e0b }
+    #dash-membership-card.tier-silver { background:linear-gradient(135deg,#f8fafc,#f1f5f9);border:1.5px solid #94a3b8 }
+    #dash-membership-card.tier-free   { background:var(--bg2,#f8fafc);border:1.5px solid var(--bdr,#e2e8f0) }
+
+    /* ── Membership page ── */
+    .membership-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px }
+    .membership-card { border:2px solid var(--bdr,#e2e8f0);border-radius:16px;padding:24px;text-align:center;transition:all .2s;position:relative;overflow:hidden;background:#fff }
+    .membership-card:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08) }
+    .membership-card.active-tier { border-color:#e8a020;box-shadow:0 0 0 3px rgba(232,160,32,.15) }
+    .membership-card.gold-card   { background:linear-gradient(160deg,#fffbeb 0%,#fff 60%) }
+    .membership-card.silver-card { background:linear-gradient(160deg,#f8fafc 0%,#fff 60%) }
+    .mc-icon  { font-size:36px;margin-bottom:8px }
+    .mc-name  { font-size:16px;font-weight:800;color:#1e293b;margin-bottom:4px }
+    .mc-price { font-size:22px;font-weight:800;color:#e8a020;margin-bottom:12px }
+    .mc-price span { font-size:13px;font-weight:500;color:#64748b }
+    .mc-feat  { text-align:left;font-size:13px;color:#475569;line-height:1.8;margin-bottom:16px }
+    .mc-feat li { list-style:none;padding-left:0 }
+    .mc-feat li::before { content:'✓ ';color:#22c55e;font-weight:700 }
+    .mc-active-badge { position:absolute;top:12px;right:12px;background:#e8a020;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px }
+  </style>
+</head>
+<body>
+
+<div class="sb-overlay" id="sb-overlay"></div>
+
+<div class="dash-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" role="navigation">
+    <div class="sb-brand">
+      <div class="sb-logo">🏪</div>
+      <div class="sb-brand-texts">
+        <div class="sb-brand-name">PURBALINGGA MART</div>
+        <div class="sb-brand-sub">Seller Center</div>
+      </div>
+    </div>
+
+    <div class="sb-store">
+      <img class="sb-store-av-img" src="https://picsum.photos/seed/seller1plg/80/80" alt="Avatar"
+           style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(232,160,32,.5);flex-shrink:0">
+      <div style="min-width:0">
+        <div class="sb-store-name-text" style="font-size:12.5px;font-weight:700;color:rgba(255,255,255,.90);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Toko Saya</div>
+        <div class="sb-store-badge">● Aktif</div>
+        <div id="sb-membership-badge" style="margin-top:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;display:none"></div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section-label">Menu Utama</div>
+      <div class="sb-item active" data-section="dashboard">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="sb-item" data-section="products">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27,6.96 12,12.01 20.73,6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span>Produk Saya</span>
+        <span class="sb-badge" id="sb-product-count">0</span>
+      </div>
+      <div class="sb-item" data-section="add-product">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Tambah Produk</span>
+      </div>
+      <div class="sb-section-label" style="margin-top:8px">Operasional</div>
+      <div class="sb-item" data-section="orders">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span>Pesanan</span>
+        <span class="sb-badge">3</span>
+      </div>
+      <div class="sb-item" data-section="stats">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Statistik</span>
+      </div>
+      <div class="sb-section-label" style="margin-top:8px">Akun</div>
+      <a href="profile.html" class="sb-item">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Profil Saya</span>
+      </a>
+      <div class="sb-item" data-section="membership">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+        <span>Membership</span>
+        <span id="sb-tier-badge" style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;display:none"></span>
+      </div>
+      <div class="sb-item" data-section="settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Pengaturan</span>
+      </div>
+      <a href="index.html" class="sb-item" style="color:rgba(255,255,255,.45)">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        <span>Kembali ke Toko</span>
+      </a>
+      <div class="sb-item logout" onclick="PM_AUTH.logout()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Keluar</span>
+      </div>
+    </nav>
+    <div class="sb-foot"><div>v3.0 · <a href="index.html">Purbalingga Mart</a></div></div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="main-area">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+      <div class="topbar-search">
+        <input type="search" id="topbar-search-input" placeholder="Cari produk saya..." autocomplete="off" />
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <div class="topbar-right">
+        <!-- Notifikasi pesanan realtime -->
+        <div style="position:relative">
+          <button class="tb-icon-btn" id="tb-notif-btn" onclick="toggleNotifDropdown()" title="Notifikasi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <div class="tb-notif-dot" id="tb-notif-dot" style="display:none"></div>
+          </button>
+          <div class="tb-notif-dropdown" id="tb-notif-dropdown" style="display:none">
+            <div class="tb-notif-head">🔔 Notifikasi</div>
+            <div id="tb-notif-list">
+              <div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px">Memuat...</div>
+            </div>
+          </div>
+        </div>
+        <!-- Profile dropdown (sama seperti homepage) -->
+        <div style="position:relative" id="pm-user-menu">
+          <button class="tb-profile" id="pm-profile-btn" onclick="PM_AUTH._toggleDrop()">
+            <img class="tb-profile-img" src="https://picsum.photos/seed/seller1plg/80/80" alt="Avatar"/>
+            <span class="tb-profile-name tb-seller-name">Seller</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>
+          </button>
+          <div class="pm-dropdown" id="pm-dropdown"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="content" id="main-content">
+
+      <!-- ========== PAGE: DASHBOARD ========== -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1>Selamat Datang! 👋</h1>
+            <p>Ringkasan performa toko Anda</p>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-outline" onclick="navigate('stats')">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Statistik
+            </button>
+            <button class="btn btn-solid" onclick="navigate('add-product')">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Tambah Produk
+            </button>
+          </div>
+        </div>
+
+        <!-- Stat Cards — filled by JS -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-left">
+              <div class="stat-label">Total Produk</div>
+              <div class="stat-value" id="dash-total-products">0</div>
+              <div class="stat-sub up"><svg viewBox="0 0 24 24"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>dari localStorage</div>
+            </div>
+            <div class="stat-icon ic-green"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-left">
+              <div class="stat-label">Produk Aktif</div>
+              <div class="stat-value" id="dash-active-products">0</div>
+              <div class="stat-sub up"><svg viewBox="0 0 24 24"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>tampil di marketplace</div>
+            </div>
+            <div class="stat-icon ic-blue"><svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-left">
+              <div class="stat-label">Total Terjual</div>
+              <div class="stat-value" id="dash-total-sold">0</div>
+              <div class="stat-sub up"><svg viewBox="0 0 24 24"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>+18% vs bulan lalu</div>
+            </div>
+            <div class="stat-icon ic-orange"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-left">
+              <div class="stat-label">Est. Pendapatan</div>
+              <div class="stat-value" id="dash-revenue" style="font-size:17px">Rp 0</div>
+              <div class="stat-sub up"><svg viewBox="0 0 24 24"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>+24% vs bulan lalu</div>
+            </div>
+            <div class="stat-icon ic-purple"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          </div>
+        </div>
+
+        <!-- MEMBERSHIP STATUS CARD -->
+        <div id="dash-membership-card" style="margin-bottom:18px;border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div id="dash-tier-icon" style="font-size:28px">🔘</div>
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.6;margin-bottom:2px">Status Membership</div>
+              <div id="dash-tier-label" style="font-size:17px;font-weight:800">Reguler (Gratis)</div>
+              <div id="dash-tier-sub" style="font-size:12px;margin-top:2px;opacity:.7">Upgrade untuk tampil lebih atas & komisi lebih rendah</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+            <div id="dash-tier-expiry" style="font-size:11px;opacity:.6"></div>
+            <button class="btn btn-solid btn-sm" onclick="navigate('membership')" id="dash-upgrade-btn">⬆️ Upgrade</button>
+          </div>
+        </div>
+
+        <!-- MODUL 2: Stok menipis alert -->
+        <div id="dash-low-stock-alert" style="display:none;margin-bottom:18px"></div>
+
+        <div class="grid-3-1">
+          <!-- Recent products -->
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Produk Terbaru Saya</h3><p>5 produk terakhir ditambahkan</p></div>
+              <button class="btn btn-outline btn-sm" onclick="navigate('products')">Lihat Semua</button>
+            </div>
+            <div id="dash-recent-products" style="padding:0 16px 16px"></div>
+          </div>
+
+          <!-- Quick actions -->
+          <div class="card">
+            <div class="card-head"><h3>Aksi Cepat</h3></div>
+            <div class="card-body" style="padding:14px">
+              <div class="quick-actions">
+                <div class="qa-item" onclick="navigate('add-product')">
+                  <div class="qa-icon" style="background:var(--g-xlt)">➕</div>
+                  <div class="qa-info"><div class="qa-title">Tambah Produk</div><div class="qa-desc">Upload produk baru</div></div>
+                  <div class="qa-arrow"><svg viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg></div>
+                </div>
+                <div class="qa-item" onclick="navigate('orders')">
+                  <div class="qa-icon" style="background:#eff6ff">📦</div>
+                  <div class="qa-info"><div class="qa-title">Pesanan Masuk</div><div class="qa-desc">3 pesanan baru</div></div>
+                  <div class="qa-arrow"><svg viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg></div>
+                </div>
+                <div class="qa-item" onclick="navigate('stats')">
+                  <div class="qa-icon" style="background:#fff7ed">📊</div>
+                  <div class="qa-info"><div class="qa-title">Lihat Statistik</div><div class="qa-desc">Performa toko</div></div>
+                  <div class="qa-arrow"><svg viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg></div>
+                </div>
+                <div class="qa-item" onclick="navigate('settings')">
+                  <div class="qa-icon" style="background:#f5f3ff">⚙️</div>
+                  <div class="qa-info"><div class="qa-title">Pengaturan Toko</div><div class="qa-desc">Edit profil toko</div></div>
+                  <div class="qa-arrow"><svg viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== PAGE: PRODUCTS ========== -->
+      <section class="page" id="page-products">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1>Produk Saya</h1>
+            <p>Kelola semua produk yang Anda jual — data dari localStorage</p>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-outline" onclick="exportMyProducts()">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+            <button class="btn btn-solid" onclick="navigate('add-product')">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Tambah Produk
+            </button>
+          </div>
+        </div>
+
+        <!-- Search + filter bar -->
+        <div class="card" style="padding:16px 18px;margin-bottom:14px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <div class="table-search" style="flex:1;min-width:200px">
+              <input type="search" id="prod-search" placeholder="Cari nama produk..." autocomplete="off" oninput="filterMyProducts()" />
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <select class="table-filter-sel" id="prod-cat-filter" onchange="filterMyProducts()">
+              <option value="">Semua Kategori</option>
+              <option value="makanan">🍱 Makanan</option>
+              <option value="minuman">☕ Minuman</option>
+              <option value="kerajinan">🧶 Kerajinan</option>
+              <option value="pertanian">🌾 Pertanian</option>
+              <option value="fashion">👗 Fashion</option>
+            </select>
+            <select class="table-filter-sel" id="prod-status-filter" onchange="filterMyProducts()">
+              <option value="">Semua Status</option>
+              <option value="active">Aktif</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Products table — filled by JS -->
+        <div class="card">
+          <div id="seller-products-list" style="padding:8px 0">
+            <div class="pm-empty-state" style="padding:48px 20px">
+              <div class="pm-empty-icon">📦</div>
+              <div class="pm-empty-title">Memuat produk...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== PAGE: ADD / EDIT PRODUCT ========== -->
+      <section class="page" id="page-add-product">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 id="add-product-heading">Tambah Produk Baru</h1>
+            <p>Isi detail produk yang ingin Anda jual</p>
+          </div>
+          <div class="page-header-right">
+            <button class="btn btn-outline" id="cancel-product-btn" onclick="navigate('products')">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Batal
+            </button>
+            <button class="btn btn-solid" id="save-product-btn">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+              Simpan Produk
+            </button>
+          </div>
+        </div>
+
+        <form id="add-product-form" onsubmit="return false">
+          <div class="grid-2" style="margin-bottom:0">
+
+            <!-- LEFT -->
+            <div style="display:flex;flex-direction:column;gap:18px">
+
+              <div class="card">
+                <div class="card-head"><h3>📋 Informasi Produk</h3></div>
+                <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+
+                  <div class="form-group">
+                    <label class="form-label" for="prod-name">Nama Produk <span class="req">*</span></label>
+                    <input class="form-input" type="text" id="prod-name" placeholder="Contoh: Nopia Asli Pak Slamet" maxlength="100" />
+                  </div>
+
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label class="form-label" for="prod-category">Kategori <span class="req">*</span></label>
+                      <select class="form-select" id="prod-category">
+                        <option value="">-- Pilih Kategori --</option>
+                        <option value="makanan">🍱 Makanan</option>
+                        <option value="minuman">☕ Minuman</option>
+                        <option value="kerajinan">🧶 Kerajinan</option>
+                        <option value="pertanian">🌾 Pertanian</option>
+                        <option value="fashion">👗 Fashion</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="prod-badge">Label / Badge</label>
+                      <select class="form-select" id="prod-badge">
+                        <option value="">-- Tanpa Label --</option>
+                        <option value="BEST SELLER">🏆 Best Seller</option>
+                        <option value="PROMO">🔴 Promo</option>
+                        <option value="TRENDING">🔥 Trending</option>
+                        <option value="BARU">✨ Baru</option>
+                        <option value="HOT">🔥 Hot</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="prod-durability">Jenis Produk <span class="req">*</span></label>
+                    <select class="form-select" id="prod-durability">
+                      <option value="tahan-lama">📦 Tahan Lama (bisa dikirim reguler/ekspres)</option>
+                      <option value="cepat-basi">🌿 Cepat Basi / Mudah Rusak (kirim/ambil hari yang sama)</option>
+                    </select>
+                    <div class="form-hint">Produk cepat basi (mis. mendoan, getuk, makanan basah) hanya bisa diambil sendiri atau diantar seller pada hari yang sama agar tetap segar.</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="prod-location">Lokasi Toko</label>
+                    <select class="form-select" id="prod-location">
+                      <option value="Purbalingga Kota">Purbalingga Kota</option>
+                      <option value="Bojongsari">Bojongsari</option>
+                      <option value="Kertanegara">Kertanegara</option>
+                      <option value="Bukateja">Bukateja</option>
+                      <option value="Mrebet">Mrebet</option>
+                      <option value="Karangreja">Karangreja</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="prod-desc">Deskripsi Produk</label>
+                    <textarea class="form-textarea" id="prod-desc" rows="4"
+                              placeholder="Jelaskan detail produk Anda: bahan, keunggulan, cara penggunaan, dll."></textarea>
+                    <div class="form-hint">Deskripsi lengkap meningkatkan kepercayaan pembeli</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Promo Aktif?</label>
+                    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:var(--r);border:1.5px solid var(--brd)">
+                      <label class="toggle">
+                        <input type="checkbox" id="prod-promo">
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:var(--txt)">Tandai sebagai Promo</div>
+                        <div style="font-size:11.5px;color:var(--txt-m)">Produk akan muncul di seksi "Promo Hari Ini"</div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Price & Stock -->
+              <div class="card">
+                <div class="card-head"><h3>💰 Harga &amp; Stok</h3></div>
+                <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+                  <div class="form-group">
+                    <label class="form-label" for="prod-price">Harga Jual <span class="req">*</span></label>
+                    <div class="input-group">
+                      <span class="input-prefix">Rp</span>
+                      <input class="form-input" type="number" id="prod-price" placeholder="15000" min="0" step="500" />
+                    </div>
+                  </div>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label class="form-label" for="prod-orig-price">Harga Coret (Asli)</label>
+                      <div class="input-group">
+                        <span class="input-prefix">Rp</span>
+                        <input class="form-input" type="number" id="prod-orig-price" placeholder="20000" min="0" step="500" />
+                      </div>
+                      <div class="form-hint">Isi jika ada diskon</div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="prod-stock">Jumlah Stok <span class="req">*</span></label>
+                      <div class="input-group">
+                        <input class="form-input" type="number" id="prod-stock" placeholder="50" min="0" />
+                        <span class="input-suffix">pcs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT: Image -->
+            <div style="display:flex;flex-direction:column;gap:18px">
+              <div class="card">
+                <div class="card-head">
+                  <div><h3>🖼️ Foto Produk</h3><p>Foto berkualitas tinggi meningkatkan penjualan</p></div>
+                </div>
+                <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+
+                  <!-- File upload -->
+                  <div class="img-upload-zone" onclick="document.getElementById('prod-image-file').click()">
+                    <input type="file" id="prod-image-file" accept="image/*" style="display:none">
+                    <input type="hidden" id="prod-image-b64">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Klik untuk pilih file gambar</div>
+                    <div class="upload-sub">PNG, JPG, WEBP · Maks 2MB</div>
+                  </div>
+
+                  <!-- Preview -->
+                  <img id="image-preview" class="ap-img-preview" alt="Preview produk" style="display:none;max-width:100%;max-height:200px;border-radius:10px;object-fit:cover">
+
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="flex:1;height:1px;background:var(--brd)"></div>
+                    <span style="font-size:12px;color:var(--txt-lt);font-weight:500">atau URL gambar</span>
+                    <div style="flex:1;height:1px;background:var(--brd)"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="prod-image-url">URL Gambar</label>
+                    <div style="display:flex;gap:8px">
+                      <input class="form-input" type="url" id="prod-image-url" style="flex:1"
+                             placeholder="https://picsum.photos/seed/produk/400/300" />
+                      <button type="button" class="btn btn-outline btn-sm" onclick="previewFromUrl()">Preview</button>
+                    </div>
+                    <div class="form-hint">Biarkan kosong untuk menggunakan placeholder otomatis</div>
+                  </div>
+
+                  <!-- Quick placeholders -->
+                  <div>
+                    <div style="font-size:11.5px;font-weight:600;color:var(--txt-m);margin-bottom:8px">Placeholder cepat:</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button type="button" class="btn btn-outline btn-sm" onclick="setPlaceholder('makanan')">🍱 Makanan</button>
+                      <button type="button" class="btn btn-outline btn-sm" onclick="setPlaceholder('kerajinan')">🧶 Kerajinan</button>
+                      <button type="button" class="btn btn-outline btn-sm" onclick="setPlaceholder('pertanian')">🌾 Pertanian</button>
+                      <button type="button" class="btn btn-outline btn-sm" onclick="setPlaceholder('fashion')">👗 Fashion</button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Tips -->
+              <div style="background:linear-gradient(135deg,var(--g-xlt),#d1fae5);border:1.5px solid var(--g-lt);border-radius:var(--r-md);padding:18px">
+                <div style="font-size:13.5px;font-weight:700;color:var(--g-dk);margin-bottom:10px">💡 Tips Berjualan</div>
+                <ul style="display:flex;flex-direction:column;gap:7px;padding-left:0;list-style:none">
+                  <li style="display:flex;gap:8px;font-size:12.5px;color:var(--g-dk)"><span>✓</span>Gunakan foto produk asli yang jelas</li>
+                  <li style="display:flex;gap:8px;font-size:12.5px;color:var(--g-dk)"><span>✓</span>Tulis deskripsi lengkap dan menarik</li>
+                  <li style="display:flex;gap:8px;font-size:12.5px;color:var(--g-dk)"><span>✓</span>Harga kompetitif sesuai pasar lokal</li>
+                  <li style="display:flex;gap:8px;font-size:12.5px;color:var(--g-dk)"><span>✓</span>Aktifkan promo untuk menarik lebih banyak pembeli</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </form>
+      </section>
+
+      <!-- ========== PAGE: ORDERS ========== -->
+      <section class="page" id="page-orders">
+        <div class="page-header">
+          <div class="page-header-left"><h1>Pesanan Masuk</h1><p>Kelola pesanan dari pembeli — data realtime dari localStorage</p></div>
+          <div class="page-header-right">
+            <a href="orders.html" class="btn btn-outline" target="_blank">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+              Buka Halaman Pesanan
+            </a>
+          </div>
+        </div>
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+          <div class="card" style="padding:14px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:900;color:var(--g)" id="seller-ord-total">0</div>
+            <div style="font-size:11.5px;color:var(--txt-m);font-weight:600">Total</div>
+          </div>
+          <div class="card" style="padding:14px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:900;color:var(--or)" id="seller-ord-pending">0</div>
+            <div style="font-size:11.5px;color:var(--txt-m);font-weight:600">Menunggu</div>
+          </div>
+          <div class="card" style="padding:14px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:900;color:var(--bl)" id="seller-ord-process">0</div>
+            <div style="font-size:11.5px;color:var(--txt-m);font-weight:600">Diproses</div>
+          </div>
+          <div class="card" style="padding:14px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:900;color:var(--g)" id="seller-ord-done">0</div>
+            <div style="font-size:11.5px;color:var(--txt-m);font-weight:600">Selesai</div>
+          </div>
+        </div>
+        <!-- Filter tabs -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+          <button class="btn btn-solid btn-sm seller-ord-filter active" data-f="all">Semua</button>
+          <button class="btn btn-outline btn-sm seller-ord-filter" data-f="pending">⏳ Menunggu</button>
+          <button class="btn btn-outline btn-sm seller-ord-filter" data-f="diproses">🔄 Diproses</button>
+          <button class="btn btn-outline btn-sm seller-ord-filter" data-f="dikirim">🚚 Dikirim</button>
+          <button class="btn btn-outline btn-sm seller-ord-filter" data-f="selesai">✅ Selesai</button>
+        </div>
+        <div id="orders-list" style="display:flex;flex-direction:column;gap:12px">
+          <div style="padding:40px;text-align:center;color:#94a3b8;font-size:13.5px">
+            <div style="font-size:32px;margin-bottom:8px">📦</div>
+            Memuat pesanan...
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ========== PAGE: STATS ========== -->
+      <section class="page" id="page-stats">
+        <div class="page-header">
+          <div class="page-header-left"><h1>Statistik Toko</h1><p>Analisis performa penjualan dari data nyata</p></div>
+          <div class="page-header-right">
+            <div style="position:relative">
+              <button class="btn btn-outline" id="export-report-btn" onclick="toggleExportMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export Laporan
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="6,9 12,15 18,9"/></svg>
+              </button>
+              <div id="export-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.12);min-width:210px;z-index:500;padding:6px">
+                <div style="font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;padding:6px 10px 4px">CSV</div>
+                <div onclick="exportSellerProducts()" class="exp-menu-item">📦 Laporan Produk (CSV)</div>
+                <div onclick="exportSellerTransactions()" class="exp-menu-item">💰 Laporan Transaksi (CSV)</div>
+                <div onclick="exportSellerReport()" class="exp-menu-item">📊 Laporan Lengkap (CSV)</div>
+                <div style="height:1px;background:#f1f5f9;margin:6px 4px"></div>
+                <div style="font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;padding:6px 10px 4px">PDF</div>
+                <div onclick="exportSellerProductsPDF()" class="exp-menu-item">📦 Laporan Produk (PDF)</div>
+                <div onclick="exportSellerTransactionsPDF()" class="exp-menu-item">💰 Laporan Transaksi (PDF)</div>
+                <div onclick="exportSellerReportPDF()" class="exp-menu-item">📊 Laporan Lengkap (PDF)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stats-grid" style="margin-bottom:24px">
+          <div class="stat-card">
+            <div class="stat-card-left"><div class="stat-label">Total Produk</div><div class="stat-value" id="adm-total-products-stat">-</div></div>
+            <div class="stat-icon ic-green"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-left"><div class="stat-label">Total Terjual</div><div class="stat-value" id="adm-total-sold-stat">-</div></div>
+            <div class="stat-icon ic-blue"><svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-left"><div class="stat-label">Rating Rata-rata</div><div class="stat-value" id="adm-avg-rating-stat" style="color:var(--yl)">-</div></div>
+            <div class="stat-icon ic-orange"><svg viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-left"><div class="stat-label">Est. Pendapatan</div><div class="stat-value" id="adm-revenue-stat" style="font-size:17px">-</div></div>
+            <div class="stat-icon ic-purple"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          </div>
+        </div>
+
+        <!-- Revenue trend chart -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-head" style="flex-wrap:wrap;gap:10px">
+            <div>
+              <h3>📈 Tren Omzet</h3>
+              <p><span class="rc-range-total" id="rc-range-total">Rp 0</span> <span class="rc-range-label" id="rc-range-label">14 hari terakhir</span></p>
+            </div>
+            <div class="rc-toggle">
+              <button class="rc-btn active" id="rc-btn-daily" onclick="renderRevenueChart('daily')">Harian</button>
+              <button class="rc-btn" id="rc-btn-monthly" onclick="renderRevenueChart('monthly')">Bulanan</button>
+            </div>
+          </div>
+          <div style="padding:8px 18px 20px;height:260px">
+            <canvas id="revenue-chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Top products table from DB -->
+        <div class="card">
+          <div class="card-head"><h3>🏆 Produk Terlaris Saya</h3><p>Berdasarkan jumlah penjualan</p></div>
+          <div id="stats-top-products" style="padding:0 0 8px"></div>
+        </div>
+
+        <!-- Category breakdown -->
+        <div class="card" style="margin-top:18px">
+          <div class="card-head"><h3>🗂️ Produk per Kategori</h3></div>
+          <div class="card-body" id="adm-cat-breakdown" style="padding:16px"></div>
+        </div>
+      </section>
+
+      <!-- ========== PAGE: SETTINGS ========== -->
+      <section class="page" id="page-settings">
+        <div class="page-header">
+          <div class="page-header-left"><h1>Pengaturan Toko</h1><p>Kelola informasi toko Anda</p></div>
+          <div class="page-header-right">
+            <button class="btn btn-solid" onclick="saveSettings()">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+              Simpan
+            </button>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card settings-section">
+            <div class="card-head"><h3>🏪 Profil Toko</h3></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+              <div class="form-group"><label class="form-label">Nama Toko</label><input class="form-input" type="text" id="setting-store-name" /></div>
+              <div class="form-group"><label class="form-label">Nama Pemilik</label><input class="form-input" type="text" id="setting-owner-name" /></div>
+              <div class="form-group"><label class="form-label">Lokasi Toko</label>
+                <select class="form-select" id="setting-location">
+                  <option>Purbalingga Kota</option><option>Bojongsari</option><option>Kertanegara</option>
+                  <option>Bukateja</option><option>Mrebet</option><option>Karangreja</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Deskripsi Toko</label>
+                <textarea class="form-textarea" rows="3" id="setting-store-desc" placeholder="Ceritakan tentang toko Anda..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card settings-section">
+              <div class="card-head"><h3>👤 Informasi Akun</h3></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+                <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="setting-email" /></div>
+                <div class="form-group"><label class="form-label">Nomor WhatsApp</label>
+                  <div class="input-group"><span class="input-prefix">+62</span><input class="form-input" type="tel" id="setting-phone" placeholder="812-3456-7890" /></div>
+                </div>
+              </div>
+            </div>
+            <div class="card settings-section">
+              <div class="card-head"><h3>🔔 Notifikasi</h3></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:0">
+                <div class="setting-row"><div class="setting-info"><h4>Pesanan Baru</h4><p>Notifikasi saat ada pesanan masuk</p></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                <div class="setting-row"><div class="setting-info"><h4>Stok Menipis</h4><p>Peringatan saat stok &lt; 10</p></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+                <div class="setting-row" style="border-bottom:none"><div class="setting-info"><h4>Promo Marketplace</h4><p>Info promo dan event</p></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      </section>
+
+      <!-- MEMBERSHIP PAGE -->
+      <section class="page" id="page-membership">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1>🏅 Membership Seller</h1>
+            <p>Pilih paket yang sesuai untuk toko Anda</p>
+          </div>
+        </div>
+
+        <!-- Status aktif -->
+        <div id="membership-current-status" style="margin-bottom:24px"></div>
+
+        <!-- Tier cards -->
+        <div class="membership-grid">
+          <!-- FREE -->
+          <div class="membership-card" id="mc-free">
+            <div class="mc-icon">🔘</div>
+            <div class="mc-name">Reguler</div>
+            <div class="mc-price">Gratis <span>/bulan</span></div>
+            <ul class="mc-feat">
+              <li>Tampil normal di marketplace</li>
+              <li>Maksimal 20 produk aktif</li>
+              <li>Service fee 2% per transaksi</li>
+            </ul>
+            <button class="btn btn-outline" style="width:100%" id="btn-free" onclick="handleUpgrade('free')">Pilih Paket Ini</button>
+          </div>
+
+          <!-- SILVER -->
+          <div class="membership-card silver-card" id="mc-silver">
+            <div class="mc-icon">🥈</div>
+            <div class="mc-name">UMKM Plus</div>
+            <div class="mc-price">Rp 29.000 <span>/bulan</span></div>
+            <ul class="mc-feat">
+              <li>Prioritas tampil +1 level</li>
+              <li>Maksimal 50 produk aktif</li>
+              <li>Badge SILVER di toko & produk</li>
+              <li>Service fee 2% per transaksi</li>
+            </ul>
+            <button class="btn btn-outline" style="width:100%" id="btn-silver" onclick="handleUpgrade('silver')">Pilih Paket Ini</button>
+          </div>
+
+          <!-- GOLD -->
+          <div class="membership-card gold-card" id="mc-gold">
+            <div class="mc-icon">🥇</div>
+            <div class="mc-name">UMKM Pro</div>
+            <div class="mc-price">Rp 79.000 <span>/bulan</span></div>
+            <ul class="mc-feat">
+              <li>Tampil paling atas (prioritas Gold)</li>
+              <li>Produk tidak terbatas</li>
+              <li>Badge GOLD di toko & produk</li>
+              <li>Statistik penjualan lanjutan</li>
+              <li>Service fee <strong>1.5%</strong> (lebih hemat)</li>
+            </ul>
+            <button class="btn btn-solid" style="width:100%" id="btn-gold" onclick="handleUpgrade('gold')">Pilih Paket Ini</button>
+          </div>
+        </div>
+
+        <!-- Perbandingan komisi -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-head"><h3>💡 Perbandingan Keuntungan Tier</h3></div>
+          <div style="overflow-x:auto;padding:0 16px 16px">
+            <table class="sp-table">
+              <thead>
+                <tr>
+                  <th>Fitur</th>
+                  <th>🔘 Reguler</th>
+                  <th>🥈 UMKM Plus</th>
+                  <th>🥇 UMKM Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Harga</td><td>Gratis</td><td>Rp 29.000/bln</td><td>Rp 79.000/bln</td></tr>
+                <tr><td>Prioritas tampil</td><td>Normal</td><td>+1 level</td><td>Paling atas</td></tr>
+                <tr><td>Maks. produk</td><td>20</td><td>50</td><td>Tidak terbatas</td></tr>
+                <tr><td>Service fee</td><td>2%</td><td>2%</td><td style="color:#e8a020;font-weight:700">1.5%</td></tr>
+                <tr><td>Badge toko</td><td>–</td><td>✓ Silver</td><td>✓ Gold</td></tr>
+                <tr><td>Statistik lanjutan</td><td>–</td><td>–</td><td>✓</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:#94a3b8;padding:0 4px">
+          * Upgrade membership bersifat simulasi — dalam produksi, terintegrasi dengan payment gateway. Aktif 30 hari sejak aktivasi.
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+
+<!-- SCRIPTS — order critical -->
+<script src="auth.js"></script>
+<script src="assets/js/storage.js"></script>
+<script src="assets/js/transaction.js"></script>
+<script src="assets/js/seller.js"></script>
+
+<!-- PDF export libraries (for "Laporan Penjualan" export menu) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.2/jspdf.plugin.autotable.min.js"></script>
+
+<!-- Chart.js (for "Tren Omzet" chart on Statistik Toko) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+
+<script>
+/* ── Seller panel navigation ─────────────────────────── */
+function navigate(section) {
+  // Clear topbar search when switching sections
+  const srch = document.getElementById('topbar-search-input');
+  if (srch) srch.value = '';
+  // Update sidebar active
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.toggle('active', el.dataset.section === section));
+  // Update pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + section);
+  if (page) page.classList.add('active');
+  // Update topbar title
+  const titles = { dashboard:'Dashboard', products:'Produk Saya', 'add-product':'Tambah Produk', orders:'Pesanan', stats:'Statistik', settings:'Pengaturan', membership:'Membership' };
+  const ttEl = document.getElementById('topbar-title');
+  if (ttEl) ttEl.textContent = titles[section] || section;
+  // Refresh data when switching sections
+  if (section === 'stats')      { renderSellerStats?.(); renderRevenueChart?.(_revenuePeriod); }
+  if (section === 'settings')   fillSettings?.();
+  if (section === 'membership') { setTimeout(() => { renderMembershipPage?.(); renderMembershipBadges?.(); }, 0); }
+  if (section === 'dashboard')  { setTimeout(() => renderMembershipBadges?.(), 0); }
+  if (section === 'orders')  {
+    const af = document.querySelector('.seller-ord-filter.active')?.dataset.f || 'all';
+    typeof renderSellerOrders === 'function' && renderSellerOrders(af);
+  }
+}
+
+/* ── Hamburger ───────────────────────────────────────── */
+document.getElementById('hamburger')?.addEventListener('click', () => {
+  document.querySelector('.sidebar')?.classList.toggle('mobile-open');
+  document.getElementById('sb-overlay')?.classList.toggle('show');
+});
+document.getElementById('sb-overlay')?.addEventListener('click', () => {
+  document.querySelector('.sidebar')?.classList.remove('mobile-open');
+  document.getElementById('sb-overlay')?.classList.remove('show');
+});
+document.querySelectorAll('.sb-item').forEach(el => {
+  if (el.dataset.section) el.addEventListener('click', () => {
+    navigate(el.dataset.section);
+    document.querySelector('.sidebar')?.classList.remove('mobile-open');
+    document.getElementById('sb-overlay')?.classList.remove('show');
+  });
+});
+
+/* ── Image helpers ───────────────────────────────────── */
+function setPlaceholder(type) {
+  const seeds = { makanan:'foodlocal', kerajinan:'craftwork', pertanian:'farmland', fashion:'fashionwear', minuman:'coffeedrink' };
+  const url = `https://picsum.photos/seed/${seeds[type]||type}/400/300`;
+  const inp = document.getElementById('prod-image-url');
+  const pre = document.getElementById('image-preview');
+  if (inp) inp.value = url;
+  if (pre) { pre.src = url; pre.style.display = 'block'; }
+  document.getElementById('prod-image-b64').value = '';
+}
+
+function previewFromUrl() {
+  const url = document.getElementById('prod-image-url')?.value.trim();
+  const pre = document.getElementById('image-preview');
+  if (!url || !pre) return;
+  pre.src = url; pre.style.display = 'block';
+  document.getElementById('prod-image-b64').value = '';
+}
+
+/* ── Filter my products in table ─────────────────────── */
+function filterMyProducts() {
+  const q      = document.getElementById('prod-search')?.value.toLowerCase() || '';
+  const cat    = document.getElementById('prod-cat-filter')?.value || '';
+  const status = document.getElementById('prod-status-filter')?.value || '';
+  const user   = PM_AUTH.getCurrentUser();
+  if (!user) return;
+  let products = PM_DB.getProductsBySeller(user.username || user.storeId);
+  if (q) products = products.filter(p => p.name.toLowerCase().includes(q));
+  if (cat) products = products.filter(p => p.category === cat);
+  if (status) products = products.filter(p => p.status === status);
+  PM_SELLER.renderMyProducts(products);
+}
+
+/* ── Export CSV ──────────────────────────────────────── */
+function exportMyProducts() {
+  const user = PM_AUTH.getCurrentUser();
+  if (!user) return;
+  const products = PM_DB.getProductsBySeller(user.username || user.storeId);
+  const headers = ['ID','Nama','Kategori','Harga','Stok','Terjual','Status'];
+  const rows = products.map(p => [p.id, `"${p.name}"`, p.category, p.price, p.stock, p.sold, p.status].join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'produk-toko.csv';
+  a.click();
+  PM_AUTH.toast('✅ Data berhasil diexport!', 'ok');
+}
+
+/* ── Render stats page ────────────────────────────────── */
+function renderSellerStats() {
+  const user = PM_AUTH.getCurrentUser();
+  if (!user) return;
+  const products = PM_DB.getProductsBySeller(user.username || user.storeId);
+  const fmt = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+  const totalSold = products.reduce((s,p) => s + (p.sold||0), 0);
+  const revenue   = products.reduce((s,p) => s + (p.sold||0) * p.price, 0);
+  const avgRating = products.length ? (products.reduce((s,p) => s + (p.rating||0), 0) / products.length).toFixed(1) : '-';
+  document.getElementById('adm-total-products-stat') && (document.getElementById('adm-total-products-stat').textContent = products.length);
+  document.getElementById('adm-total-sold-stat')     && (document.getElementById('adm-total-sold-stat').textContent = totalSold);
+  document.getElementById('adm-avg-rating-stat')     && (document.getElementById('adm-avg-rating-stat').textContent = avgRating + ' ⭐');
+  document.getElementById('adm-revenue-stat')        && (document.getElementById('adm-revenue-stat').textContent = fmt(revenue));
+
+  // Top products
+  const topEl = document.getElementById('stats-top-products');
+  if (topEl) {
+    const sorted = [...products].sort((a,b) => b.sold - a.sold).slice(0,6);
+    topEl.innerHTML = `<div style="overflow-x:auto"><table class="sp-table"><thead><tr><th>#</th><th>Produk</th><th>Harga</th><th>Terjual</th><th>Est. Pendapatan</th></tr></thead><tbody>${
+      sorted.map((p,i) => `<tr><td style="font-weight:700">${i+1}</td><td style="font-weight:600">${p.name}</td><td>${fmt(p.price)}</td><td style="font-weight:700">${p.sold}</td><td style="color:var(--g);font-weight:700">${fmt(p.sold*p.price)}</td></tr>`).join('')
+    }</tbody></table></div>`;
+  }
+
+  // Category breakdown
+  const catEl = document.getElementById('adm-cat-breakdown');
+  if (catEl && products.length) {
+    const cats = {};
+    products.forEach(p => { cats[p.category] = (cats[p.category]||0) + 1; });
+    catEl.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,n]) => `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:13px;color:#1e293b;min-width:100px;text-transform:capitalize">${c}</span>
+        <div style="flex:1;background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:${Math.round(n/products.length*100)}%;height:100%;background:#e8a020;border-radius:4px"></div>
+        </div>
+        <span style="font-size:12px;color:#64748b;min-width:20px">${n}</span>
+      </div>`).join('');
+  }
+}
+
+/* ── Revenue trend chart (Tren Omzet) ─────────────────── */
+let _revenueChart  = null;
+let _revenuePeriod = 'daily';
+
+function buildRevenueSeries(txns, period) {
+  const now = new Date();
+  const labels = [];
+  const data   = [];
+
+  if (period === 'monthly') {
+    const months = 6;
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const y = d.getFullYear(), m = d.getMonth();
+      labels.push(d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }));
+      const sum = txns
+        .filter(t => { const td = new Date(t.createdAt); return td.getFullYear() === y && td.getMonth() === m; })
+        .reduce((s, t) => s + t.total, 0);
+      data.push(sum);
+    }
+  } else {
+    const days = 14;
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toDateString();
+      labels.push(d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }));
+      const sum = txns
+        .filter(t => new Date(t.createdAt).toDateString() === key)
+        .reduce((s, t) => s + t.total, 0);
+      data.push(sum);
+    }
+  }
+  return { labels, data };
+}
+
+function renderRevenueChart(period) {
+  if (period) _revenuePeriod = period;
+  const user   = PM_AUTH.getCurrentUser();
+  const canvas = document.getElementById('revenue-chart-canvas');
+  if (!user || !canvas || typeof Chart === 'undefined') return;
+
+  const txns = PM_TX.getBySeller(user.username);
+  const { labels, data } = buildRevenueSeries(txns, _revenuePeriod);
+  const total = data.reduce((a, b) => a + b, 0);
+
+  document.getElementById('rc-btn-daily')?.classList.toggle('active', _revenuePeriod === 'daily');
+  document.getElementById('rc-btn-monthly')?.classList.toggle('active', _revenuePeriod === 'monthly');
+  const totalEl = document.getElementById('rc-range-total');
+  const labelEl = document.getElementById('rc-range-label');
+  if (totalEl) totalEl.textContent = 'Rp ' + total.toLocaleString('id-ID');
+  if (labelEl) labelEl.textContent = _revenuePeriod === 'daily' ? '14 hari terakhir' : '6 bulan terakhir';
+
+  if (_revenueChart) _revenueChart.destroy();
+  _revenueChart = new Chart(canvas.getContext('2d'), {
+    type: _revenuePeriod === 'daily' ? 'line' : 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Omzet',
+        data,
+        borderColor: '#e8a020',
+        backgroundColor: _revenuePeriod === 'daily' ? 'rgba(232,160,32,0.12)' : '#e8a020',
+        fill: _revenuePeriod === 'daily',
+        tension: 0.35,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        pointBackgroundColor: '#e8a020',
+        borderRadius: _revenuePeriod === 'monthly' ? 6 : 0,
+        maxBarThickness: 40,
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d0d1a',
+          padding: 10,
+          titleFont: { family: 'Poppins', size: 12 },
+          bodyFont: { family: 'Poppins', size: 12, weight: 'bold' },
+          callbacks: { label: ctx => 'Rp ' + ctx.parsed.y.toLocaleString('id-ID') },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#94a3b8',
+            font: { family: 'Poppins', size: 10 },
+            callback: v => v >= 1000000 ? (v / 1000000) + 'jt' : v >= 1000 ? (v / 1000) + 'rb' : v,
+          },
+          grid: { color: '#f1f5f9' },
+        },
+        x: {
+          ticks: { color: '#94a3b8', font: { family: 'Poppins', size: 10 } },
+          grid: { display: false },
+        },
+      },
+    },
+  });
+}
+
+/* ── Fill settings from user data ───────────────────── */
+function fillSettings() {
+  const user = PM_AUTH.getCurrentUser();
+  if (!user) return;
+  document.getElementById('setting-store-name')  && (document.getElementById('setting-store-name').value = user.storeName || '');
+  document.getElementById('setting-owner-name')  && (document.getElementById('setting-owner-name').value = user.name || '');
+  document.getElementById('setting-email')       && (document.getElementById('setting-email').value = user.email || '');
+  const locSel = document.getElementById('setting-location');
+  if (locSel && user.location) {
+    [...locSel.options].forEach(o => { if (o.value === user.location) o.selected = true; });
+  }
+}
+
+function saveSettings() {
+  PM_AUTH.toast('✅ Pengaturan berhasil disimpan!', 'ok');
+}
+
+/* ── Update sidebar product count ────────────────────── */
+function updateSbCount() {
+  const user = PM_AUTH.getCurrentUser();
+  if (!user) return;
+  const cnt = PM_DB.getProductsBySeller(user.username || user.storeId).length;
+  const el = document.getElementById('sb-product-count');
+  if (el) el.textContent = cnt;
+}
+
+/* ── MODUL 2: Notifikasi stok menipis ─────────────────── */
+const LOW_STOCK_THRESHOLD = 5;
+
+function renderLowStockAlert() {
+  const user = PM_AUTH.getCurrentUser();
+  const box  = document.getElementById('dash-low-stock-alert');
+  if (!user || !box) return;
+
+  const products   = PM_DB.getProductsBySeller(user.username || user.storeId);
+  const outOfStock = products.filter(p => p.stock === 0);
+  const lowStock   = products.filter(p => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD);
+
+  if (outOfStock.length === 0 && lowStock.length === 0) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  const rows = [
+    ...outOfStock.map(p => ({ p, state: 'out' })),
+    ...lowStock.map(p => ({ p, state: 'low' })),
+  ];
+  const subParts = [];
+  if (outOfStock.length) subParts.push(`${outOfStock.length} produk habis`);
+  if (lowStock.length)   subParts.push(`${lowStock.length} produk hampir habis (\u2264 ${LOW_STOCK_THRESHOLD})`);
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="lsa-banner">
+      <div class="lsa-head">
+        <div class="lsa-head-left">
+          <div class="lsa-ico">⚠️</div>
+          <div>
+            <div class="lsa-title">Perhatian: Stok Menipis</div>
+            <div class="lsa-sub">${subParts.join(' · ')}</div>
+          </div>
+        </div>
+        <button class="lsa-close" onclick="document.getElementById('dash-low-stock-alert').style.display='none'" title="Tutup">✕</button>
+      </div>
+      <div class="lsa-list">
+        ${rows.slice(0, 6).map(({ p, state }) => `
+          <div class="lsa-item${state === 'out' ? ' lsa-item-out' : ''}" onclick="navigate('products')">
+            <img src="${p.image}" alt="${p.name}">
+            <div class="lsa-item-info">
+              <div class="lsa-item-name">${p.name}</div>
+              <div class="lsa-item-stock">${state === 'out' ? 'Stok habis' : `Sisa ${p.stock} stok`}</div>
+            </div>
+            <span class="lsa-badge ${state === 'out' ? 'lsa-badge-out' : 'lsa-badge-low'}">${state === 'out' ? 'HABIS' : 'MENIPIS'}</span>
+          </div>`).join('')}
+      </div>
+      ${rows.length > 6 ? `<div class="lsa-more" onclick="navigate('products')">+${rows.length - 6} produk lainnya — lihat semua</div>` : ''}
+    </div>`;
+}
+
+/* ── PM_SELLER.renderMyProducts with optional override ── */
+const _origRenderMyProducts = PM_SELLER.renderMyProducts;
+PM_SELLER.renderMyProducts = function(products) {
+  if (products) {
+    // Render with filtered list
+    const el = document.getElementById('seller-products-list');
+    if (!el) return;
+    if (!products.length) {
+      el.innerHTML = `<div class="pm-empty-state" style="padding:48px 20px"><div class="pm-empty-icon">🔍</div><div class="pm-empty-title">Tidak Ada Produk</div><div class="pm-empty-desc">Coba ubah filter pencarian.</div></div>`;
+      return;
+    }
+    // reuse table render from seller.js by calling without args
+    _origRenderMyProducts.call(this);
+  } else {
+    _origRenderMyProducts.call(this);
+    updateSbCount();
+    renderLowStockAlert();
+  }
+};
+
+/* ── Init extras after DOMContentLoaded ─────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  updateSbCount();
+  fillSettings();
+  // Topbar search
+  document.getElementById('topbar-search-input')?.addEventListener('input', function() {
+    const q = this.value;
+    const active = document.querySelector('.page.active');
+    if (active?.id === 'page-products') {
+      document.getElementById('prod-search').value = q;
+      filterMyProducts();
+    } else if (active?.id === 'page-orders') {
+      document.getElementById('ord-search')?.dispatchEvent(
+        Object.assign(new Event('input'), { target: { value: q } })
+      );
+    }
+  });
+
+  /* ── Seller orders dynamic rendering ───────────────────── */
+  function renderSellerOrders(filterStatus) {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user) return;
+    const txns = PM_TX.getBySeller(user.username);
+    const filtered = filterStatus && filterStatus !== 'all'
+      ? txns.filter(t => t.status === filterStatus) : txns;
+
+    // Update stats
+    const byStatus = {};
+    txns.forEach(t => { byStatus[t.status] = (byStatus[t.status]||0)+1; });
+    document.getElementById('seller-ord-total')   && (document.getElementById('seller-ord-total').textContent = txns.length);
+    document.getElementById('seller-ord-pending') && (document.getElementById('seller-ord-pending').textContent = byStatus.pending||0);
+    document.getElementById('seller-ord-process') && (document.getElementById('seller-ord-process').textContent = (byStatus.diproses||0)+(byStatus.dikirim||0));
+    document.getElementById('seller-ord-done')    && (document.getElementById('seller-ord-done').textContent = byStatus.selesai||0);
+
+    // Update sidebar badge
+    document.getElementById('sb-badge') && filtered.forEach(() => {});
+    const badgeEl = document.querySelector('[data-section="orders"] .sb-badge');
+    if (badgeEl) badgeEl.textContent = byStatus.pending||0;
+
+    const fmt = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+    const fmtDate = d => new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const STATUS = { pending:{lbl:'Menunggu',cls:'#fff7ed',color:'#d97706'}, diproses:{lbl:'Diproses',cls:'#eff6ff',color:'#2563eb'}, dikirim:{lbl:'Dikirim',cls:'#fff7ed',color:'#ea580c'}, selesai:{lbl:'Selesai',cls:'#fff8e8',color:'#c98310'} };
+    const NEXT  = { pending:'diproses', diproses:'dikirim', dikirim:'selesai' };
+    const NEXT_L= { pending:'✅ Konfirmasi', diproses:'🚚 Kirim', dikirim:'✅ Selesai' };
+
+    const el = document.getElementById('orders-list');
+    if (!el) return;
+
+    if (!filtered.length) {
+      el.innerHTML = `<div class="card" style="padding:48px;text-align:center;color:#94a3b8">
+        <div style="font-size:40px;margin-bottom:10px">📋</div>
+        <div style="font-size:14px;font-weight:600">Belum ada pesanan${filterStatus&&filterStatus!=='all'?' dengan status ini':''}</div>
+      </div>`;
+      return;
+    }
+
+    el.innerHTML = filtered.map(t => {
+      const s = STATUS[t.status]||STATUS.pending;
+      const preview = t.products.slice(0,2);
+      const more = t.products.length - 2;
+      const hasNext = NEXT[t.status];
+      return `<div class="card" style="border-left:4px solid ${s.color}">
+        <div style="background:#f8fafc;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid #f1f5f9">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:${s.cls};color:${s.color};padding:3px 10px;border-radius:6px;font-size:11px;font-weight:800;text-transform:uppercase">${s.lbl}</span>
+            <span style="font-size:12px;color:#94a3b8;font-family:monospace">${t.transactionId}</span>
+          </div>
+          <span style="font-size:11.5px;color:#94a3b8">${fmtDate(t.createdAt)}</span>
+        </div>
+        <div style="padding:14px 16px">
+          <div style="font-size:12.5px;color:#64748b;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            👤 <strong>${t.buyerName}</strong> · ${t.address.city||''} · ${t.address.phone||''} · <em>${t.paymentMethod?.toUpperCase()}</em>
+          </div>
+          ${preview.map(p=>`
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <img src="${p.image}" onerror="this.src='https://picsum.photos/seed/${p.productId}/80/80'" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid #f1f5f9">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:700;color:#1e293b">${p.name}</div>
+                <div style="font-size:12px;color:#94a3b8">${fmt(p.price)} × ${p.qty}</div>
+              </div>
+              <div style="font-weight:800;color:#e8a020;font-size:13px">${fmt(p.subtotal)}</div>
+            </div>`).join('')}
+          ${more>0?`<div style="font-size:12px;color:#94a3b8;padding-left:54px">+${more} produk lainnya</div>`:''}
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid #f8fafc;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div style="font-size:15px;font-weight:900;color:#e8a020">Total: ${fmt(t.total)}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${hasNext?`<button class="btn btn-solid btn-sm" onclick="sellerChangeStatus('${t.transactionId}','${NEXT[t.status]}')">${NEXT_L[t.status]}</button>`:''}
+            <a href="invoice.html?id=${t.transactionId}" target="_blank" class="btn btn-outline btn-sm">🧾 Invoice</a>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function sellerChangeStatus(txId, newStatus) {
+    PM_TX.updateStatus(txId, newStatus,
+      newStatus==='diproses'?'Seller mengkonfirmasi pesanan':
+      newStatus==='dikirim' ?'Pesanan telah dikirim':
+      'Pesanan selesai');
+    PM_AUTH.toast('✅ Status pesanan diperbarui!','ok');
+    const activeFilter = document.querySelector('.seller-ord-filter.active')?.dataset.f||'all';
+    renderSellerOrders(activeFilter);
+  }
+
+  // Expose to global scope so navigate() and onclick attributes can access them
+  window.renderSellerOrders = renderSellerOrders;
+  window.sellerChangeStatus = sellerChangeStatus;
+
+  // Render orders immediately if the page loads with #orders section visible
+  if (document.getElementById('page-orders')?.classList.contains('active')) {
+    renderSellerOrders('all');
+  }
+
+  // Filter buttons
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.seller-ord-filter');
+    if (!btn) return;
+    document.querySelectorAll('.seller-ord-filter').forEach(b=>{
+      b.classList.remove('active','btn-solid');
+      b.classList.add('btn-outline');
+    });
+    btn.classList.add('active','btn-solid');
+    btn.classList.remove('btn-outline');
+    renderSellerOrders(btn.dataset.f);
+  });
+
+  /* ── Notifikasi realtime ────────────────────────────────── */
+  function updateNotifBadge() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user) return;
+    const txns       = PM_TX.getBySeller(user.username);
+    const pending    = txns.filter(t => t.status === 'pending');
+    const products   = PM_DB.getProductsBySeller(user.username || user.storeId);
+    const stockAlerts = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD);
+    const dot = document.getElementById('tb-notif-dot');
+    if (dot) dot.style.display = (pending.length > 0 || stockAlerts.length > 0) ? 'block' : 'none';
+  }
+
+  window.toggleNotifDropdown = function() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user) return;
+    const dd  = document.getElementById('tb-notif-dropdown');
+    if (!dd) return;
+    const open = dd.style.display !== 'none';
+    dd.style.display = open ? 'none' : 'block';
+    if (!open) renderNotifList(user);
+  };
+
+  function renderNotifList(user) {
+    const list = document.getElementById('tb-notif-list');
+    if (!list) return;
+    const txns        = PM_TX.getBySeller(user.username);
+    const pending     = txns.filter(t => t.status === 'pending').slice(0, 4);
+    const products    = PM_DB.getProductsBySeller(user.username || user.storeId);
+    const stockAlerts = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD).slice(0, 4);
+    const fmt         = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+
+    if (pending.length === 0 && stockAlerts.length === 0) {
+      list.innerHTML = `<div style="text-align:center;padding:20px 16px;color:#94a3b8;font-size:13px">Tidak ada notifikasi baru 🎉</div>`;
+      return;
+    }
+
+    const orderItems = pending.map(t => `
+      <div class="tb-notif-item" onclick="navigate('orders');document.getElementById('tb-notif-dropdown').style.display='none'">
+        <div class="tb-notif-icon">📦</div>
+        <div class="tb-notif-info">
+          <div class="tb-notif-title">Pesanan Baru Masuk</div>
+          <div class="tb-notif-sub">${t.buyerName} · ${fmt(t.total)}</div>
+          <div class="tb-notif-time">${new Date(t.createdAt).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>`).join('');
+
+    const stockItems = stockAlerts.map(p => `
+      <div class="tb-notif-item" onclick="navigate('products');document.getElementById('tb-notif-dropdown').style.display='none'">
+        <div class="tb-notif-icon">${p.stock === 0 ? '🚫' : '⚠️'}</div>
+        <div class="tb-notif-info">
+          <div class="tb-notif-title">${p.stock === 0 ? 'Stok Habis' : 'Stok Menipis'}</div>
+          <div class="tb-notif-sub">${p.name} · Sisa ${p.stock} stok</div>
+        </div>
+      </div>`).join('');
+
+    list.innerHTML = orderItems + stockItems;
+  }
+
+  /* ── Profile dropdown ────────────────────────────────────── */
+  function initProfileDropdown() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user) return;
+
+    // Update avatar
+    const img = document.querySelector('.tb-profile-img');
+    if (img) img.src = user.avatar || `https://picsum.photos/seed/${user.username}/80/80`;
+
+    // Build dropdown HTML
+    const dd = document.getElementById('pm-dropdown');
+    if (!dd) return;
+
+    const menuItems = user.role === 'seller' ? [
+      { icon: '🏪', label: 'Dashboard', action: "navigate('dashboard')" },
+      { icon: '📦', label: 'Produk Saya', action: "navigate('products')" },
+      { icon: '📋', label: 'Pesanan', action: "navigate('orders')" },
+      { icon: '👤', label: 'Profil Saya', action: "window.location.href='profile.html'" },
+      { icon: '🚪', label: 'Keluar', action: "PM_AUTH.logout()", danger: true },
+    ] : [];
+
+    dd.innerHTML = `
+      <div class="pm-drop-user">
+        <img src="${user.avatar || `https://picsum.photos/seed/${user.username}/80/80`}"
+             style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1e293b">${user.name}</div>
+          <div style="font-size:11px;color:#94a3b8">@${user.username}</div>
+        </div>
+      </div>
+      <div class="pm-drop-divider"></div>
+      ${menuItems.map(item => `
+        <div class="pm-drop-item${item.danger ? ' pm-drop-item-danger' : ''}"
+             onclick="${item.action};document.getElementById('pm-dropdown').classList.remove('open')">
+          <span>${item.icon}</span> ${item.label}
+        </div>`).join('')}`;
+  }
+
+  // Toggle dropdown open/close
+  PM_AUTH._toggleDrop = function() {
+    const dd = document.getElementById('pm-dropdown');
+    if (!dd) return;
+    dd.classList.toggle('open');
+  };
+
+  // Close dropdowns on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#pm-user-menu')) {
+      document.getElementById('pm-dropdown')?.classList.remove('open');
+    }
+    if (!e.target.closest('#tb-notif-btn') && !e.target.closest('#tb-notif-dropdown')) {
+      document.getElementById('tb-notif-dropdown') && (document.getElementById('tb-notif-dropdown').style.display = 'none');
+    }
+  });
+
+  // Init on load
+  initProfileDropdown();
+  updateNotifBadge();
+  renderLowStockAlert();
+  setInterval(updateNotifBadge, 30000); // refresh badge every 30s
+
+  /* ── MODUL 11: Export functions ─────────────────────── */
+  function toggleExportMenu() {
+    const m = document.getElementById('export-menu');
+    if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#export-report-btn') && !e.target.closest('#export-menu'))
+      document.getElementById('export-menu') && (document.getElementById('export-menu').style.display = 'none');
+  });
+
+  function dlCsv(csv, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'}));
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    PM_AUTH.toast('✅ Export ' + filename + ' berhasil!', 'ok');
+    document.getElementById('export-menu') && (document.getElementById('export-menu').style.display = 'none');
+  }
+
+  function exportSellerProducts() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user) return;
+    const products = PM_DB.getProductsBySeller(user.username);
+    const rows = [['ID','Nama Produk','Kategori','Lokasi','Harga','Harga Asli','Stok','Terjual','Rating','Status','Jenis','Dibuat']];
+    products.forEach(p => rows.push([
+      p.id, `"${p.name}"`, p.category, p.location,
+      p.price, p.originalPrice || p.price, p.stock, p.sold || 0,
+      p.rating || 0, p.status,
+      p.perishable ? 'Cepat Basi' : 'Tahan Lama',
+      new Date(p.createdAt).toLocaleDateString('id-ID')
+    ]));
+    dlCsv(rows.map(r=>r.join(',')).join('\n'), `laporan-produk-${user.storeName||user.username}-${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
+  function exportSellerTransactions() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user) return;
+    const txns = PM_TX.getBySeller(user.username);
+    const rows = [['ID Transaksi','Pembeli','HP','Kota','Produk','Total Qty','Subtotal','Ongkir','Diskon','Total','Pembayaran','Status','Tanggal']];
+    txns.forEach(t => {
+      const myItems = t.products.filter(p => p.sellerUsername === user.username);
+      const mySubtotal = myItems.reduce((s,p) => s + p.subtotal, 0);
+      rows.push([
+        t.transactionId, `"${t.buyerName}"`, t.address?.phone || '',
+        `"${t.address?.city || ''}"`,
+        `"${myItems.map(p=>p.name+'x'+p.qty).join('; ')}"`,
+        myItems.reduce((s,p) => s+p.qty, 0),
+        mySubtotal, t.shipping || 0, t.discount || 0, t.total,
+        t.paymentMethod, t.status,
+        new Date(t.createdAt).toLocaleDateString('id-ID')
+      ]);
+    });
+    dlCsv(rows.map(r=>r.join(',')).join('\n'), `laporan-transaksi-${user.storeName||user.username}-${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
+  function exportSellerReport() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user) return;
+    const products = PM_DB.getProductsBySeller(user.username);
+    const txns     = PM_TX.getBySeller(user.username);
+    const fmt      = n => n;
+
+    // Summary sheet
+    const totalRevenue = txns.reduce((s,t) => s+t.total, 0);
+    const totalSold    = products.reduce((s,p) => s+(p.sold||0), 0);
+    const lowStock     = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD);
+    const outOfStock   = products.filter(p => p.stock === 0);
+
+    let csv = `LAPORAN TOKO - ${user.storeName || user.username}\n`;
+    csv += `Diekspor: ${new Date().toLocaleString('id-ID')}\n\n`;
+    csv += `RINGKASAN\n`;
+    csv += `Total Produk,${products.length}\n`;
+    csv += `Produk Aktif,${products.filter(p=>p.status==='active').length}\n`;
+    csv += `Total Terjual,${totalSold}\n`;
+    csv += `Est. Pendapatan,"${'Rp '+totalRevenue.toLocaleString('id-ID')}"\n`;
+    csv += `Total Transaksi,${txns.length}\n`;
+    csv += `Stok Menipis (<=${LOW_STOCK_THRESHOLD}),${lowStock.length}\n`;
+    csv += `Stok Habis,${outOfStock.length}\n\n`;
+
+    csv += `DAFTAR PRODUK\n`;
+    csv += `ID,Nama,Kategori,Harga,Stok,Terjual,Status\n`;
+    products.forEach(p => {
+      csv += `${p.id},"${p.name}",${p.category},${p.price},${p.stock},${p.sold||0},${p.status}\n`;
+    });
+
+    csv += `\nDAFTAR TRANSAKSI\n`;
+    csv += `ID,Pembeli,Total,Status,Tanggal\n`;
+    txns.forEach(t => {
+      csv += `${t.transactionId},"${t.buyerName}",${t.total},${t.status},${new Date(t.createdAt).toLocaleDateString('id-ID')}\n`;
+    });
+
+    dlCsv(csv, `laporan-lengkap-${user.storeName||user.username}-${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
+  /* ================================================================
+     PDF EXPORT (jsPDF + autoTable)
+     ================================================================ */
+  function pdfHeader(doc, title, user) {
+    const pageW = doc.internal.pageSize.getWidth();
+    doc.setFillColor(13, 13, 26); // --dark
+    doc.rect(0, 0, pageW, 22, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(232, 160, 32); // --g
+    doc.text('PURBALINGGA MART', 12, 14);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.text(user.storeName || user.username, pageW - 12, 14, { align: 'right' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title, 12, 32);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Diekspor: ' + new Date().toLocaleString('id-ID'), 12, 38);
+    return 44;
+  }
+
+  function pdfReady() {
+    if (typeof window.jspdf === 'undefined') {
+      PM_AUTH.toast('Gagal memuat library PDF. Periksa koneksi internet lalu coba lagi.', 'err');
+      return false;
+    }
+    return true;
+  }
+
+  function pdfDone(doc, filename, label) {
+    doc.save(filename);
+    PM_AUTH.toast('✅ ' + label + ' berhasil diunduh!', 'ok');
+    document.getElementById('export-menu') && (document.getElementById('export-menu').style.display = 'none');
+  }
+
+  function exportSellerProductsPDF() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user || !pdfReady()) return;
+    const { jsPDF } = window.jspdf;
+    const products = PM_DB.getProductsBySeller(user.username);
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const startY = pdfHeader(doc, 'Laporan Produk', user);
+
+    if (!products.length) {
+      doc.setFontSize(11); doc.setTextColor(148, 163, 184);
+      doc.text('Belum ada produk.', 12, startY + 6);
+    } else {
+      doc.autoTable({
+        startY,
+        head: [['ID','Nama Produk','Kategori','Lokasi','Harga','Stok','Terjual','Rating','Status','Jenis']],
+        body: products.map(p => [
+          p.id, p.name, p.category, p.location,
+          'Rp ' + p.price.toLocaleString('id-ID'),
+          p.stock, p.sold || 0, (p.rating || 0).toFixed(1), p.status,
+          p.perishable ? 'Cepat Basi' : 'Tahan Lama',
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [232,160,32], textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
+        styles: { font: 'helvetica', fontSize: 8, textColor: [30,41,59], cellPadding: 2.2 },
+        alternateRowStyles: { fillColor: [248,250,252] },
+      });
+    }
+
+    pdfDone(doc, `laporan-produk-${user.storeName||user.username}-${new Date().toISOString().slice(0,10)}.pdf`, 'PDF Laporan Produk');
+  }
+
+  function exportSellerTransactionsPDF() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user || !pdfReady()) return;
+    const { jsPDF } = window.jspdf;
+    const txns = PM_TX.getBySeller(user.username);
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const startY = pdfHeader(doc, 'Laporan Transaksi', user);
+
+    if (!txns.length) {
+      doc.setFontSize(11); doc.setTextColor(148, 163, 184);
+      doc.text('Belum ada transaksi.', 12, startY + 6);
+    } else {
+      doc.autoTable({
+        startY,
+        head: [['ID Transaksi','Pembeli','Kota','Produk','Qty','Subtotal','Total','Bayar','Status','Tanggal']],
+        body: txns.map(t => {
+          const myItems    = t.products.filter(p => p.sellerUsername === user.username);
+          const mySubtotal = myItems.reduce((s,p) => s + p.subtotal, 0);
+          return [
+            t.transactionId, t.buyerName, t.address?.city || '',
+            myItems.map(p => p.name + ' x' + p.qty).join(', '),
+            myItems.reduce((s,p) => s + p.qty, 0),
+            'Rp ' + mySubtotal.toLocaleString('id-ID'),
+            'Rp ' + t.total.toLocaleString('id-ID'),
+            (t.paymentMethod || '').toUpperCase(), t.status,
+            new Date(t.createdAt).toLocaleDateString('id-ID'),
+          ];
+        }),
+        theme: 'grid',
+        headStyles: { fillColor: [232,160,32], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+        styles: { font: 'helvetica', fontSize: 7.5, textColor: [30,41,59], cellPadding: 2 },
+        alternateRowStyles: { fillColor: [248,250,252] },
+        columnStyles: { 3: { cellWidth: 55 } },
+      });
+    }
+
+    pdfDone(doc, `laporan-transaksi-${user.storeName||user.username}-${new Date().toISOString().slice(0,10)}.pdf`, 'PDF Laporan Transaksi');
+  }
+
+  function exportSellerReportPDF() {
+    const user = PM_AUTH.getCurrentUser();
+    if (!user || !pdfReady()) return;
+    const { jsPDF } = window.jspdf;
+    const products = PM_DB.getProductsBySeller(user.username);
+    const txns     = PM_TX.getBySeller(user.username);
+    const totalRevenue = txns.reduce((s,t) => s + t.total, 0);
+    const totalSold    = products.reduce((s,p) => s + (p.sold || 0), 0);
+    const lowStock     = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD).length;
+    const outOfStock   = products.filter(p => p.stock === 0).length;
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    let y = pdfHeader(doc, 'Laporan Lengkap Toko', user);
+
+    doc.autoTable({
+      startY: y,
+      body: [
+        ['Total Produk', String(products.length), 'Total Transaksi', String(txns.length)],
+        ['Produk Aktif', String(products.filter(p => p.status === 'active').length), 'Stok Menipis (\u2264' + LOW_STOCK_THRESHOLD + ')', String(lowStock)],
+        ['Total Terjual', String(totalSold), 'Stok Habis', String(outOfStock)],
+        ['Est. Pendapatan', 'Rp ' + totalRevenue.toLocaleString('id-ID'), '', ''],
+      ],
+      theme: 'plain',
+      styles: { font: 'helvetica', fontSize: 9, textColor: [30,41,59], cellPadding: 1.6 },
+      columnStyles: {
+        0: { fontStyle: 'bold', textColor: [100,116,139] },
+        2: { fontStyle: 'bold', textColor: [100,116,139] },
+      },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(30,41,59);
+    doc.text('Daftar Produk', 12, y);
+    y += 3;
+
+    if (products.length) {
+      doc.autoTable({
+        startY: y,
+        head: [['ID','Nama','Kategori','Harga','Stok','Terjual','Status']],
+        body: products.map(p => [p.id, p.name, p.category, 'Rp ' + p.price.toLocaleString('id-ID'), p.stock, p.sold || 0, p.status]),
+        theme: 'grid',
+        headStyles: { fillColor: [13,13,26], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+        styles: { font: 'helvetica', fontSize: 7.5, textColor: [30,41,59], cellPadding: 2 },
+        alternateRowStyles: { fillColor: [248,250,252] },
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    } else {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(148,163,184);
+      doc.text('Belum ada produk.', 12, y + 4);
+      y += 12;
+    }
+
+    if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 16; }
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(30,41,59);
+    doc.text('Daftar Transaksi', 12, y);
+    y += 3;
+
+    if (txns.length) {
+      doc.autoTable({
+        startY: y,
+        head: [['ID Transaksi','Pembeli','Total','Status','Tanggal']],
+        body: txns.map(t => [t.transactionId, t.buyerName, 'Rp ' + t.total.toLocaleString('id-ID'), t.status, new Date(t.createdAt).toLocaleDateString('id-ID')]),
+        theme: 'grid',
+        headStyles: { fillColor: [13,13,26], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+        styles: { font: 'helvetica', fontSize: 7.5, textColor: [30,41,59], cellPadding: 2 },
+        alternateRowStyles: { fillColor: [248,250,252] },
+      });
+    } else {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(148,163,184);
+      doc.text('Belum ada transaksi.', 12, y + 4);
+    }
+
+    pdfDone(doc, `laporan-lengkap-${user.storeName||user.username}-${new Date().toISOString().slice(0,10)}.pdf`, 'PDF Laporan Lengkap');
+  }
+
+  /* ── Expose to window: onclick="..." attributes only resolve global scope,
+     these functions live inside this DOMContentLoaded closure otherwise ── */
+  window.toggleExportMenu         = toggleExportMenu;
+  window.exportSellerProducts     = exportSellerProducts;
+  window.exportSellerTransactions = exportSellerTransactions;
+  window.exportSellerReport       = exportSellerReport;
+  window.exportSellerProductsPDF      = exportSellerProductsPDF;
+  window.exportSellerTransactionsPDF  = exportSellerTransactionsPDF;
+  window.exportSellerReportPDF        = exportSellerReportPDF;
+
+});
+</script>
+
+<style>
+/* ── Modal konfirmasi upgrade ── */
+.upgrade-modal-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.upgrade-modal-overlay.show { opacity:1;pointer-events:all; }
+.upgrade-modal {
+  background:#fff;border-radius:20px;padding:32px 28px;max-width:400px;width:100%;
+  box-shadow:0 24px 60px rgba(0,0,0,.18);transform:translateY(16px);transition:transform .2s;
+  text-align:center;
+}
+.upgrade-modal-overlay.show .upgrade-modal { transform:translateY(0); }
+.upgrade-modal-icon { font-size:48px;margin-bottom:12px; }
+.upgrade-modal-title { font-size:19px;font-weight:800;color:#1e293b;margin-bottom:6px; }
+.upgrade-modal-desc  { font-size:13.5px;color:#64748b;line-height:1.6;margin-bottom:8px; }
+.upgrade-modal-price {
+  font-size:26px;font-weight:800;color:#e8a020;margin:12px 0 20px;
+}
+.upgrade-modal-price span { font-size:13px;font-weight:500;color:#94a3b8; }
+.upgrade-modal-note  { font-size:11.5px;color:#94a3b8;margin-bottom:24px;line-height:1.5; }
+.upgrade-modal-btns  { display:flex;gap:10px; }
+.upgrade-modal-btns .btn { flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:12px; }
+</style>
+
+<!-- Modal konfirmasi upgrade -->
+<div class="upgrade-modal-overlay" id="upgrade-modal-overlay">
+  <div class="upgrade-modal">
+    <div class="upgrade-modal-icon" id="um-icon">🥇</div>
+    <div class="upgrade-modal-title" id="um-title">Upgrade ke UMKM Pro?</div>
+    <div class="upgrade-modal-desc"  id="um-desc">Nikmati semua keuntungan tier Gold selama 30 hari.</div>
+    <div class="upgrade-modal-price" id="um-price">Rp 79.000 <span>/bulan</span></div>
+    <div class="upgrade-modal-note"  id="um-note">⚠️ Demo: tier aktif langsung tanpa pembayaran nyata.</div>
+    <div class="upgrade-modal-btns">
+      <button class="btn btn-outline" onclick="closeUpgradeModal()">Batal</button>
+      <button class="btn btn-solid"   id="um-confirm-btn" onclick="confirmUpgrade()">✅ Aktifkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Membership UI — seller.html ───────────────────────────────── */
+
+const TIER_CONFIG = {
+  free:   { label:'Reguler',   icon:'🔘', feeRate:0.02,  maxProducts:20,   badgeText:null,     badgeCls:'' },
+  silver: { label:'UMKM Plus', icon:'🥈', feeRate:0.02,  maxProducts:50,   badgeText:'SILVER', badgeCls:'pc-tier-silver' },
+  gold:   { label:'UMKM Pro',  icon:'🥇', feeRate:0.015, maxProducts:null, badgeText:'GOLD',   badgeCls:'pc-tier-gold' },
+};
+
+const TIER_PRICES = { free:'Gratis', silver:'Rp 29.000', gold:'Rp 79.000' };
+
+function getActiveTier() {
+  const user = PM_AUTH.getCurrentUser();
+  if (!user) return { tier:'free', ...TIER_CONFIG.free, expiry:null, isExpired:false };
+  const tier   = user.membershipTier   || 'free';
+  const expiry = user.membershipExpiry ? new Date(user.membershipExpiry) : null;
+  const isExpired = expiry && expiry < new Date();
+  const active = isExpired ? 'free' : tier;
+  return { tier:active, rawTier:tier, isExpired, expiry, ...TIER_CONFIG[active] };
+}
+
+/* ── Badges ─────────────────────────────────────────────────── */
+function renderMembershipBadges() {
+  const info = getActiveTier();
+
+  // Badge kecil di nav sidebar
+  const sbBadge = document.getElementById('sb-tier-badge');
+  if (sbBadge) {
+    if (info.badgeText) {
+      sbBadge.textContent  = info.badgeText;
+      sbBadge.className    = info.badgeCls;
+      sbBadge.style.display = 'inline-block';
+    } else {
+      sbBadge.style.display = 'none';
+    }
+  }
+
+  // Badge di sidebar store area
+  const sbMem = document.getElementById('sb-membership-badge');
+  if (sbMem) {
+    if (info.tier !== 'free') {
+      sbMem.textContent   = info.icon + ' ' + info.label;
+      sbMem.className     = info.badgeCls;
+      sbMem.style.display = 'inline-block';
+    } else {
+      sbMem.style.display = 'none';
+    }
+  }
+
+  // Dashboard card
+  const card = document.getElementById('dash-membership-card');
+  if (card) {
+    card.className = 'tier-' + info.tier;
+    const iconEl  = document.getElementById('dash-tier-icon');
+    const labelEl = document.getElementById('dash-tier-label');
+    const subEl   = document.getElementById('dash-tier-sub');
+    const expEl   = document.getElementById('dash-tier-expiry');
+    const btnEl   = document.getElementById('dash-upgrade-btn');
+
+    if (iconEl)  iconEl.textContent  = info.icon;
+    if (labelEl) labelEl.textContent = info.icon + ' ' + info.label;
+    if (subEl) {
+      subEl.textContent = info.tier === 'gold'
+        ? 'Anda menikmati komisi 1.5% & tampil paling atas 🎉'
+        : info.tier === 'silver'
+          ? 'Upgrade ke Gold untuk komisi 1.5% & posisi teratas'
+          : 'Upgrade untuk tampil lebih atas & komisi lebih rendah';
+    }
+    if (expEl) {
+      expEl.textContent = (info.expiry && info.tier !== 'free')
+        ? 'Aktif s/d ' + info.expiry.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' })
+        : '';
+    }
+    if (btnEl) {
+      btnEl.textContent = info.tier === 'gold' ? '🏆 Aktif' : '⬆️ Upgrade';
+      btnEl.disabled    = false; // selalu bisa klik untuk masuk halaman membership
+    }
+  }
+}
+
+/* ── Halaman membership ─────────────────────────────────────── */
+function renderMembershipPage() {
+  const info = getActiveTier();
+
+  // Status banner
+  const statusEl = document.getElementById('membership-current-status');
+  if (statusEl) {
+    const bgColor  = info.tier==='gold' ? '#fffbeb' : info.tier==='silver' ? '#f8fafc' : '#f1f5f9';
+    const bdrColor = info.tier==='gold' ? '#f59e0b' : info.tier==='silver' ? '#94a3b8' : '#e2e8f0';
+    const exp = (info.expiry && info.tier !== 'free')
+      ? ' · Aktif s/d ' + info.expiry.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})
+      : '';
+    statusEl.innerHTML = `
+      <div style="background:${bgColor};border:1.5px solid ${bdrColor};border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px">
+        <div style="font-size:26px">${info.icon}</div>
+        <div>
+          <div style="font-weight:700;font-size:15px;color:#1e293b">Tier Aktif: ${info.label}${exp}</div>
+          <div style="font-size:12.5px;color:#64748b;margin-top:2px">
+            Service fee: ${(info.feeRate*100).toFixed(1)}% ·
+            Maks. produk: ${info.maxProducts ?? 'Tidak terbatas'}
+            ${info.isExpired ? ' · <span style="color:#ef4444;font-weight:700">⚠️ Expired, diturunkan ke Reguler</span>' : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Render tiap tier card
+  ['free','silver','gold'].forEach(t => {
+    const card = document.getElementById('mc-' + t);
+    const btn  = document.getElementById('btn-' + t);
+    if (!card || !btn) return;
+
+    const isCurrent = t === info.tier;
+
+    // Highlight aktif
+    card.classList.toggle('active-tier', isCurrent);
+
+    // Badge "✓ Aktif" di pojok kanan atas
+    card.querySelectorAll('.mc-active-badge').forEach(b => b.remove());
+    if (isCurrent) {
+      const badge = document.createElement('div');
+      badge.className   = 'mc-active-badge';
+      badge.textContent = '✓ Aktif';
+      card.appendChild(badge);
+    }
+
+    // Tombol — styling berbeda per tier, state berbeda jika aktif
+    btn.disabled = isCurrent;
+
+    if (isCurrent) {
+      btn.textContent = '✓ Paket Aktif';
+      btn.className   = 'btn btn-outline';
+      btn.style.width = '100%';
+      btn.style.cursor = 'default';
+    } else if (t === 'gold') {
+      // Gold selalu solid/menonjol
+      btn.textContent = 'Pilih Paket Ini';
+      btn.className   = 'btn btn-solid';
+      btn.style.width = '100%';
+      btn.style.cursor = 'pointer';
+    } else if (t === 'free') {
+      btn.textContent = 'Turun ke Gratis';
+      btn.className   = 'btn btn-outline';
+      btn.style.width = '100%';
+      btn.style.cursor = 'pointer';
+    } else {
+      // silver — outline tapi dengan warna aksen
+      btn.textContent = 'Pilih Paket Ini';
+      btn.className   = 'btn btn-outline';
+      btn.style.width = '100%';
+      btn.style.cursor = 'pointer';
+    }
+  });
+}
+
+/* ── Modal upgrade ──────────────────────────────────────────── */
+let _pendingTier = null;
+
+function handleUpgrade(tier) {
+  const info = getActiveTier();
+  if (tier === info.tier) return;
+
+  _pendingTier = tier;
+
+  const cfg = TIER_CONFIG[tier];
+  const isDowngrade = tier === 'free';
+
+  document.getElementById('um-icon').textContent  = cfg.icon;
+  document.getElementById('um-title').textContent =
+    isDowngrade ? 'Turun ke Reguler?' : `Upgrade ke ${cfg.label}?`;
+  document.getElementById('um-desc').textContent  =
+    isDowngrade
+      ? 'Produk Anda akan kembali ke urutan normal dan fitur premium dinonaktifkan.'
+      : `Nikmati semua keuntungan tier ${cfg.label} selama 30 hari ke depan.`;
+  document.getElementById('um-price').innerHTML =
+    isDowngrade
+      ? '<span style="color:#64748b">Tanpa biaya</span>'
+      : `${TIER_PRICES[tier]} <span>/bulan</span>`;
+  document.getElementById('um-note').textContent =
+    isDowngrade
+      ? 'Anda dapat upgrade kembali kapan saja.'
+      : '⚠️ Demo: tier aktif langsung tanpa pembayaran nyata.';
+
+  const confirmBtn = document.getElementById('um-confirm-btn');
+  confirmBtn.textContent = isDowngrade ? '⬇️ Turunkan' : '✅ Aktifkan';
+  confirmBtn.className   = isDowngrade ? 'btn btn-outline' : 'btn btn-solid';
+
+  document.getElementById('upgrade-modal-overlay').classList.add('show');
+}
+
+function closeUpgradeModal() {
+  document.getElementById('upgrade-modal-overlay').classList.remove('show');
+  _pendingTier = null;
+}
+
+function confirmUpgrade() {
+  if (!_pendingTier) return;
+  const result = PM_AUTH.upgradeMembership(_pendingTier);
+  closeUpgradeModal();
+
+  if (!result.ok) {
+    PM_AUTH.toast('❌ ' + result.msg, 'warn');
+    return;
+  }
+
+  const cfg = TIER_CONFIG[_pendingTier];
+  PM_AUTH.toast(`${cfg.icon} Membership ${result.label} berhasil diaktifkan!`, 'ok');
+  renderMembershipBadges();
+  renderMembershipPage();
+  _pendingTier = null;
+}
+
+// Tutup modal jika klik overlay
+document.getElementById('upgrade-modal-overlay')?.addEventListener('click', function(e) {
+  if (e.target === this) closeUpgradeModal();
+});
+
+// Init saat DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  renderMembershipBadges();
+});
+
+window.handleUpgrade      = handleUpgrade;
+window.closeUpgradeModal  = closeUpgradeModal;
+window.confirmUpgrade     = confirmUpgrade;
+window.renderMembershipPage   = renderMembershipPage;
+window.renderMembershipBadges = renderMembershipBadges;
+</script>
+</body>
+
+
+</html>
